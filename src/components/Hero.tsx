@@ -8,7 +8,7 @@ interface HeroProps {
 
 export function Hero({ searchQuery, setSearchQuery }: HeroProps) {
   return (
-    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16 px-4">
+    <div className="bg-linear-to-r from-indigo-600 to-purple-600 text-white py-16 px-4">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="mb-4">{siteConfig.hero.title}</h2>
         <p className="text-indigo-100 mb-8 max-w-2xl mx-auto">

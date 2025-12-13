@@ -8,7 +8,7 @@ const iconMap: Record<string, React.ReactNode> = {
   Code: <Code className="w-4 h-4" />,
 };
 
-export type SectionType = 'home' | 'about' | 'contact' | 'admin'; // example
+type SectionType = 'cheatsheets' | 'templates' | 'testcases' | 'testscripts' | 'admin';
 
 type HeaderProps = {
   activeSection: SectionType;
@@ -76,7 +76,7 @@ export function Header({
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => setActiveSection(item.id as SectionType)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
                 activeSection === item.id
                   ? 'bg-indigo-600 text-white'

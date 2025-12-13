@@ -76,7 +76,7 @@ export function CheatSheetCard({ sheet }: CheatSheetCardProps) {
                         </div>
                       ) : (
                         <div className="flex items-start gap-2">
-                          <span className="text-indigo-600 mt-0.5 flex-shrink-0">•</span>
+                          <span className="text-indigo-600 mt-0.5 shrink-0">•</span>
                           <span>{item.description}</span>
                         </div>
                       )}
