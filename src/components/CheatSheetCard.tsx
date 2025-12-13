@@ -68,13 +68,10 @@ export function CheatSheetCard({ sheet }: CheatSheetCardProps) {
         </button>
 
         {/* Expanded details section with smooth animation */}
-        <div 
-          className={`overflow-hidden transition-all duration-300 ease-in-out ${
-            isExpanded ? 'max-h-[5000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className="pt-4 border-t border-slate-200 space-y-6">
-            {sheet.sections.map((section, sectionIdx) => (
+        {isExpanded && (
+          <div className="overflow-hidden transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-2 mt-4">
+            <div className="pt-4 border-t border-slate-200 space-y-6">
+              {sheet.sections.map((section, sectionIdx) => (
               <section key={`section-${sectionIdx}`}>
                 <h4 className="text-base text-slate-900 font-semibold mb-3 flex items-center gap-2">
                   <span className="w-1 h-5 bg-indigo-500 rounded-full"></span>
@@ -144,8 +141,9 @@ export function CheatSheetCard({ sheet }: CheatSheetCardProps) {
                 </div>
               </section>
             )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </article>
   );

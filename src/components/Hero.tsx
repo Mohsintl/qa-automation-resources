@@ -8,10 +8,12 @@ interface HeroProps {
 
 export function Hero({ searchQuery, setSearchQuery }: HeroProps) {
   return (
-    <div className="bg-linear-to-r from-indigo-600 to-purple-600 text-white py-16 px-4">
+    <div className="bg-gradient-to-br from-slate-50 to-slate-100 py-20 px-4 border-b border-slate-200">
       <div className="max-w-4xl mx-auto text-center">
-        <h2 className="mb-4">{siteConfig.hero.title}</h2>
-        <p className="text-indigo-100 mb-8 max-w-2xl mx-auto">
+        <h1 className="text-5xl font-bold text-slate-900 mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          {siteConfig.hero.title}
+        </h1>
+        <p className="text-slate-600 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
           {siteConfig.description}
         </p>
         <div className="relative max-w-2xl mx-auto">
@@ -21,7 +23,7 @@ export function Hero({ searchQuery, setSearchQuery }: HeroProps) {
             placeholder={siteConfig.hero.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 rounded-xl bg-white text-slate-900 placeholder-slate-400 shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="w-full pl-12 pr-4 py-4 rounded-xl bg-white text-slate-900 placeholder-slate-400 shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-slate-200 hover:border-indigo-300 transition-colors"
           />
         </div>
       </div>
