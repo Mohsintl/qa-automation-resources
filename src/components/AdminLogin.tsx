@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { signIn } from '../utils/auth';
 import { signupAdmin } from '../utils/api';
+import { showToast, validateRequired, handleNetworkError } from '../utils/errorHandling';
 
 interface AdminLoginProps {
   onClose: () => void;
@@ -25,6 +26,14 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
   async function handleLogin(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     setError('');
+
+    const validationError = validateRequired({ email, password });
+    if (validationError) {
+      setError(validationError);
+      showToast({ type: 'error', message: validationError });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -32,13 +41,18 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
 
       // Verify user has admin privileges
       if (!data.user?.user_metadata?.isAdmin) {
-        setError('Access denied. Admin privileges required.');
+        const msg = 'Access denied. Admin privileges required.';
+        setError(msg);
+        showToast({ type: 'error', message: msg });
         return;
       }
 
+      showToast({ type: 'success', message: 'Logged in successfully!' });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      const errorMsg = handleNetworkError(err);
+      setError(errorMsg);
+      showToast({ type: 'error', message: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -50,6 +64,14 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
   async function handleSignup(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     setError('');
+
+    const validationError = validateRequired({ email, password, name, adminSecret });
+    if (validationError) {
+      setError(validationError);
+      showToast({ type: 'error', message: validationError });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -58,9 +80,12 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
 
       // Automatically sign in after successful signup
       await signIn(email, password);
+      showToast({ type: 'success', message: 'Admin account created successfully!' });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to create admin account');
+      const errorMsg = handleNetworkError(err);
+      setError(errorMsg);
+      showToast({ type: 'error', message: errorMsg });
     } finally {
       setLoading(false);
     }

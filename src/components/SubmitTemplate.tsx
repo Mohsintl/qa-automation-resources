@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { submitContent } from '../utils/api';
+import { showToast, validateRequired, handleNetworkError } from '../utils/errorHandling';
 
 interface SubmitTemplateProps {
   onClose: () => void;
@@ -19,6 +20,14 @@ export function SubmitTemplate({ onClose, onSuccess }: SubmitTemplateProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    const validationError = validateRequired({ title, category, template });
+    if (validationError) {
+      setError(validationError);
+      showToast({ type: 'error', message: validationError });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -30,10 +39,12 @@ export function SubmitTemplate({ onClose, onSuccess }: SubmitTemplateProps) {
       };
 
       await submitContent('template', data, submittedBy || 'Anonymous');
-      alert('Template submitted successfully! It will appear after admin approval.');
+      showToast({ type: 'success', message: 'Template submitted successfully! It will appear after admin approval.' });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit');
+      const errorMsg = handleNetworkError(err);
+      setError(errorMsg);
+      showToast({ type: 'error', message: errorMsg });
     } finally {
       setLoading(false);
     }

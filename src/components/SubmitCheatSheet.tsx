@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { submitContent } from '../utils/api';
 import { siteConfig } from '../config';
+import { showToast, validateRequired, handleNetworkError } from '../utils/errorHandling';
 
 interface SubmitCheatSheetProps {
   onClose: () => void;
@@ -71,6 +72,24 @@ export function SubmitCheatSheet({ onClose, onSuccess }: SubmitCheatSheetProps) 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    // Validate required fields
+    const validationError = validateRequired({ title, description, category });
+    if (validationError) {
+      setError(validationError);
+      showToast({ type: 'error', message: validationError });
+      return;
+    }
+
+    // Validate sections
+    const validSections = sections.filter(s => s.title && s.items.some(i => i.description || i.code));
+    if (validSections.length === 0) {
+      const msg = 'Please add at least one section with content';
+      setError(msg);
+      showToast({ type: 'error', message: msg });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -78,15 +97,23 @@ export function SubmitCheatSheet({ onClose, onSuccess }: SubmitCheatSheetProps) 
         title,
         description,
         category,
-        tags: tags.split(',').map(t => t.trim()),
-        sections: sections.filter(s => s.title && s.items.some(i => i.description)),
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        sections: validSections,
       };
 
       await submitContent('cheatsheet', data, submittedBy || 'Anonymous');
-      alert('Cheat sheet submitted successfully! It will appear after admin approval.');
+      
+      showToast({ 
+        type: 'success', 
+        message: 'Cheat sheet submitted successfully! It will appear after admin approval.' 
+      });
+      
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit');
+      const errorMsg = handleNetworkError(err);
+      setError(errorMsg);
+      showToast({ type: 'error', message: errorMsg });
+      console.error('Submission error:', err);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { submitContent } from '../utils/api';
+import { showToast, validateRequired, handleNetworkError } from '../utils/errorHandling';
 
 interface SubmitBoilerplateProps {
   onClose: () => void;
@@ -21,6 +22,14 @@ export function SubmitBoilerplate({ onClose, onSuccess }: SubmitBoilerplateProps
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    const validationError = validateRequired({ title, framework, language, description, code });
+    if (validationError) {
+      setError(validationError);
+      showToast({ type: 'error', message: validationError });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -34,10 +43,12 @@ export function SubmitBoilerplate({ onClose, onSuccess }: SubmitBoilerplateProps
       };
 
       await submitContent('boilerplate', data, submittedBy || 'Anonymous');
-      alert('Boilerplate submitted successfully! It will appear after admin approval.');
+      showToast({ type: 'success', message: 'Boilerplate submitted successfully! It will appear after admin approval.' });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit');
+      const errorMsg = handleNetworkError(err);
+      setError(errorMsg);
+      showToast({ type: 'error', message: errorMsg });
     } finally {
       setLoading(false);
     }

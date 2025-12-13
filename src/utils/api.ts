@@ -6,6 +6,8 @@ const HEADERS_JSON = {
   'Content-Type': 'application/json',
 } as const;
 
+const REQUEST_TIMEOUT = 30000; // 30 seconds
+
 /**
  * Helper to parse API error responses.
  * @param response - Fetch response object
@@ -14,9 +16,35 @@ const HEADERS_JSON = {
 async function parseError(response: Response): Promise<string> {
   try {
     const error = await response.json();
-    return error.error || 'Request failed';
+    return error.error || error.message || `Request failed with status ${response.status}`;
   } catch {
-    return 'Request failed';
+    return `Request failed with status ${response.status}`;
+  }
+}
+
+/**
+ * Wrapper for fetch with timeout and error handling
+ */
+async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.');
+    }
+    if (!navigator.onLine) {
+      throw new Error('No internet connection. Please check your network.');
+    }
+    throw new Error('Network error. Please check your connection and try again.');
   }
 }
 
@@ -33,7 +61,11 @@ export async function submitContent(
   data: Record<string, any>,
   submittedBy?: string
 ): Promise<any> {
-  const response = await fetch(`${apiConfig.endpoints.submissions}`, {
+  if (!type || !data) {
+    throw new Error('Type and data are required');
+  }
+
+  const response = await fetchWithTimeout(`${apiConfig.endpoints.submissions}`, {
     method: 'POST',
     headers: {
       ...HEADERS_JSON,
@@ -57,7 +89,11 @@ export async function submitContent(
  * @throws Error if fetch fails
  */
 export async function getPendingSubmissions(accessToken: string): Promise<any> {
-  const response = await fetch(`${apiConfig.endpoints.adminPending}`, {
+  if (!accessToken) {
+    throw new Error('Access token is required');
+  }
+
+  const response = await fetchWithTimeout(`${apiConfig.endpoints.adminPending}`, {
     method: 'GET',
     headers: {
       ...HEADERS_JSON,
@@ -86,7 +122,11 @@ export async function reviewSubmission(
   action: 'approve' | 'reject',
   accessToken: string
 ): Promise<any> {
-  const response = await fetch(`${apiConfig.endpoints.adminReview}`, {
+  if (!submissionId || !action || !accessToken) {
+    throw new Error('Submission ID, action, and access token are required');
+  }
+
+  const response = await fetchWithTimeout(`${apiConfig.endpoints.adminReview}`, {
     method: 'POST',
     headers: {
       ...HEADERS_JSON,
@@ -110,7 +150,11 @@ export async function reviewSubmission(
  * @throws Error if fetch fails
  */
 export async function getApprovedContent(type: string): Promise<any> {
-  const response = await fetch(`${apiConfig.endpoints.approvedContent}/${type}`, {
+  if (!type) {
+    throw new Error('Content type is required');
+  }
+
+  const response = await fetchWithTimeout(`${apiConfig.endpoints.approvedContent}/${type}`, {
     method: 'GET',
     headers: {
       ...HEADERS_JSON,
@@ -141,7 +185,11 @@ export async function signupAdmin(
   name: string,
   adminSecret: string
 ): Promise<any> {
-  const response = await fetch(`${apiConfig.endpoints.adminSignup}`, {
+  if (!email || !password || !name || !adminSecret) {
+    throw new Error('All fields are required');
+  }
+
+  const response = await fetchWithTimeout(`${apiConfig.endpoints.adminSignup}`, {
     method: 'POST',
     headers: {
       ...HEADERS_JSON,

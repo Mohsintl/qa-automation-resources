@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { submitContent } from '../utils/api';
+import { showToast, validateRequired, handleNetworkError } from '../utils/errorHandling';
 
 interface SubmitTestScriptProps {
   onClose: () => void;
@@ -21,6 +22,14 @@ export function SubmitTestScript({ onClose, onSuccess }: SubmitTestScriptProps) 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    const validationError = validateRequired({ app, framework, title, description, language, code });
+    if (validationError) {
+      setError(validationError);
+      showToast({ type: 'error', message: validationError });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -34,10 +43,12 @@ export function SubmitTestScript({ onClose, onSuccess }: SubmitTestScriptProps) 
       };
 
       await submitContent('testscript', data, submittedBy || 'Anonymous');
-      alert('Test script submitted successfully! It will appear after admin approval.');
+      showToast({ type: 'success', message: 'Test script submitted successfully! It will appear after admin approval.' });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit');
+      const errorMsg = handleNetworkError(err);
+      setError(errorMsg);
+      showToast({ type: 'error', message: errorMsg });
     } finally {
       setLoading(false);
     }

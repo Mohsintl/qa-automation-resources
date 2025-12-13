@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Check, X, Eye, LogOut } from 'lucide-react';
 import { getPendingSubmissions, reviewSubmission } from '../utils/api';
 import { getSession, signOut } from '../utils/auth';
+import { showToast, handleNetworkError } from '../utils/errorHandling';
 import type { User } from '@supabase/supabase-js';
 
 interface AdminPanelProps {
@@ -31,17 +32,27 @@ export function AdminPanel({ user }: AdminPanelProps) {
   async function loadSubmissions(): Promise<void> {
     try {
       setLoading(true);
+      setError('');
       const session = await getSession();
+      
       if (!session?.access_token) {
-        setError('Not authenticated');
+        const msg = 'Not authenticated. Please log in again.';
+        setError(msg);
+        showToast({ type: 'error', message: msg });
         return;
       }
 
       setAccessToken(session.access_token);
       const data = await getPendingSubmissions(session.access_token);
       setSubmissions(data.submissions || []);
+      
+      if (data.submissions?.length === 0) {
+        showToast({ type: 'info', message: 'No pending submissions at the moment.' });
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to load submissions');
+      const errorMsg = handleNetworkError(err);
+      setError(errorMsg);
+      showToast({ type: 'error', message: errorMsg });
       console.error('Failed to load submissions:', err);
     } finally {
       setLoading(false);
@@ -64,13 +75,15 @@ export function AdminPanel({ user }: AdminPanelProps) {
       const message = action === 'approve'
         ? 'Submission approved successfully!'
         : 'Submission rejected successfully!';
-      alert(message);
+      
+      showToast({ type: 'success', message });
 
       // Notify other parts of the app that content has been updated
       // Components that show approved content can listen for this event and refetch.
       window.dispatchEvent(new CustomEvent('content-updated'));
     } catch (err: any) {
-      alert(err.message || 'Failed to review submission');
+      const errorMsg = handleNetworkError(err);
+      showToast({ type: 'error', message: errorMsg });
       console.error('Failed to review submission:', err);
     }
   }
@@ -81,8 +94,11 @@ export function AdminPanel({ user }: AdminPanelProps) {
   async function handleSignOut(): Promise<void> {
     try {
       await signOut();
-      window.location.reload();
+      showToast({ type: 'success', message: 'Signed out successfully!' });
+      setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
+      const errorMsg = handleNetworkError(err);
+      showToast({ type: 'error', message: errorMsg });
       console.error('Failed to sign out:', err);
     }
   }

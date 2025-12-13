@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { submitContent } from '../utils/api';
+import { showToast, validateRequired, handleNetworkError } from '../utils/errorHandling';
 
 interface SubmitTestCaseProps {
   onClose: () => void;
@@ -55,20 +56,38 @@ export function SubmitTestCase({ onClose, onSuccess }: SubmitTestCaseProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    const validationError = validateRequired({ app, category });
+    if (validationError) {
+      setError(validationError);
+      showToast({ type: 'error', message: validationError });
+      return;
+    }
+
+    const validCases = testCases.filter(tc => tc.title && tc.expected);
+    if (validCases.length === 0) {
+      const msg = 'Please add at least one test case with title and expected result';
+      setError(msg);
+      showToast({ type: 'error', message: msg });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const data = {
         app,
         category,
-        cases: testCases.filter(tc => tc.title && tc.expected)
+        cases: validCases
       };
 
       await submitContent('testcase', data, submittedBy || 'Anonymous');
-      alert('Test case submitted successfully! It will appear after admin approval.');
+      showToast({ type: 'success', message: 'Test case submitted successfully! It will appear after admin approval.' });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit');
+      const errorMsg = handleNetworkError(err);
+      setError(errorMsg);
+      showToast({ type: 'error', message: errorMsg });
     } finally {
       setLoading(false);
     }
