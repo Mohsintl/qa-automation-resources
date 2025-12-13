@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { getApprovedContent } from '../utils/api';
 import { siteConfig } from '../config';
+import { LoadingSkeleton } from './ui/loading-skeleton';
 import type { CheatSheet } from '../data/cheatSheets';
 
 interface CheatSheetGridProps {
@@ -20,6 +21,7 @@ export function CheatSheetGrid({
 }: CheatSheetGridProps) {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [allSheets, setAllSheets] = useState<CheatSheet[]>(cheatSheets);
+  const [loading, setLoading] = useState(true);
 
   // Load approved user-submitted cheat sheets on mount
   useEffect(() => {
@@ -36,6 +38,7 @@ export function CheatSheetGrid({
    */
   async function loadApprovedContent(): Promise<void> {
     try {
+      setLoading(true);
       const data = await getApprovedContent('cheatsheet');
       const approvedSheets = (data.items || []).map((item: any, index: number) => ({
         ...item,
@@ -45,6 +48,8 @@ export function CheatSheetGrid({
       setAllSheets([...cheatSheets, ...approvedSheets]);
     } catch (error) {
       console.error('Failed to load approved cheat sheets:', error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -81,17 +86,6 @@ export function CheatSheetGrid({
         </button>
       </div>
 
-      {/* Submission form modal */}
-      {showSubmitForm && (
-        <SubmitCheatSheet
-          onClose={() => setShowSubmitForm(false)}
-          onSuccess={() => {
-            setShowSubmitForm(false);
-            loadApprovedContent();
-          }}
-        />
-      )}
-
       {/* Category filter buttons */}
       <div className="flex flex-wrap gap-3 mb-8">
         {siteConfig.categories.cheatsheet.map(category => (
@@ -110,24 +104,48 @@ export function CheatSheetGrid({
         ))}
       </div>
 
-      {/* Results counter */}
-      <p className="text-slate-600 mb-6 text-sm">
-        {filteredSheets.length} cheat sheet{filteredSheets.length !== 1 ? 's' : ''}
-      </p>
-
-      {/* Cheat sheets grid */}
-      {filteredSheets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSheets.map(sheet => (
-            <CheatSheetCard key={sheet.id} sheet={sheet} />
-          ))}
-        </div>
+      {/* Loading state */}
+      {loading ? (
+        <>
+          <div className="h-4 w-32 bg-slate-200 rounded animate-pulse mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <LoadingSkeleton variant="card" count={6} />
+          </div>
+        </>
       ) : (
-        <div className="text-center py-16">
-          <p className="text-slate-500">
-            No cheat sheets found. Try adjusting your search or filters.
+        <>
+          {/* Results counter */}
+          <p className="text-slate-600 mb-6 text-sm">
+            {filteredSheets.length} cheat sheet{filteredSheets.length !== 1 ? 's' : ''}
           </p>
-        </div>
+
+          {/* Cheat sheets grid */}
+          {filteredSheets.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredSheets.map(sheet => (
+                <CheatSheetCard key={sheet.id} sheet={sheet} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
+              <p className="text-slate-500 text-lg mb-2">No cheat sheets found</p>
+              <p className="text-slate-400 text-sm">
+                Try adjusting your search or filters.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Submit Form Modal */}
+      {showSubmitForm && (
+        <SubmitCheatSheet
+          onClose={() => setShowSubmitForm(false)}
+          onSuccess={() => {
+            setShowSubmitForm(false);
+            loadApprovedContent();
+          }}
+        />
       )}
     </div>
   );
