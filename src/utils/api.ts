@@ -9,6 +9,13 @@ const HEADERS_JSON = {
 const REQUEST_TIMEOUT = 30000; // 30 seconds
 
 /**
+ * Check if Supabase credentials are properly configured
+ */
+function areCredentialsValid(): boolean {
+  return Boolean(publicAnonKey && publicAnonKey.length > 10); // Basic validation
+}
+
+/**
  * Helper to parse API error responses.
  * @param response - Fetch response object
  * @returns Error message from response or generic message
@@ -54,7 +61,7 @@ async function fetchWithTimeout(url: string, options: RequestInit): Promise<Resp
  * @param data - Content data
  * @param submittedBy - Optional creator name
  * @returns Server response with submission confirmation
- * @throws Error if submission fails
+ * @throws Error if submission fails or credentials are missing
  */
 export async function submitContent(
   type: string,
@@ -63,6 +70,10 @@ export async function submitContent(
 ): Promise<any> {
   if (!type || !data) {
     throw new Error('Type and data are required');
+  }
+
+  if (!areCredentialsValid()) {
+    throw new Error('API credentials not configured. Please contact the administrator.');
   }
 
   const response = await fetchWithTimeout(`${apiConfig.endpoints.submissions}`, {
@@ -147,11 +158,17 @@ export async function reviewSubmission(
  * Fetch approved content by type.
  * @param type - Content type filter (cheatsheet, template, etc.)
  * @returns List of approved content
- * @throws Error if fetch fails
+ * @throws Error if fetch fails or credentials are missing
  */
 export async function getApprovedContent(type: string): Promise<any> {
   if (!type) {
     throw new Error('Content type is required');
+  }
+
+  if (!areCredentialsValid()) {
+    // Return empty result instead of throwing error for better UX
+    console.warn('API credentials not configured, returning empty results');
+    return { items: [] };
   }
 
   const response = await fetchWithTimeout(`${apiConfig.endpoints.approvedContent}/${type}`, {
@@ -177,7 +194,7 @@ export async function getApprovedContent(type: string): Promise<any> {
  * @param name - Admin name
  * @param adminSecret - Secret key to authorize admin creation
  * @returns Server response with admin account details
- * @throws Error if signup fails
+ * @throws Error if signup fails or credentials are missing
  */
 export async function signupAdmin(
   email: string,
@@ -187,6 +204,10 @@ export async function signupAdmin(
 ): Promise<any> {
   if (!email || !password || !name || !adminSecret) {
     throw new Error('All fields are required');
+  }
+
+  if (!areCredentialsValid()) {
+    throw new Error('API credentials not configured. Please contact the administrator.');
   }
 
   const response = await fetchWithTimeout(`${apiConfig.endpoints.adminSignup}`, {
