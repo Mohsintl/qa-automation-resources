@@ -10,9 +10,9 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-deploy:
+  build-and-deploy-frontend:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,41 +23,87 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build project
+      - name: Build frontend
         run: npm run build
         env:
           VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
           VITE_SUPABASE_PUBLIC_ANON_KEY: ${{ secrets.VITE_SUPABASE_PUBLIC_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-          VITE_API_FUNCTION_NAME: ${{ secrets.VITE_API_FUNCTION_NAME }}
           VITE_SITE_NAME: ${{ secrets.VITE_SITE_NAME }}
           VITE_COMPANY_NAME: ${{ secrets.VITE_COMPANY_NAME }}
           VITE_GITHUB_URL: ${{ secrets.VITE_GITHUB_URL }}
 
-      - name: Run tests (if available)
+      - name: Run frontend tests
         run: npm test --if-present
         continue-on-error: true
 
-      - name: Upload artifact
+      - name: Upload frontend artifact
         uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
           path: './build'
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy frontend to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         if: github.ref == 'refs/heads/main'
 
-      # Vercel deployment (uncomment when ready)
-      # - name: Deploy to Vercel
-      #   uses: amondnet/vercel-action@v25
-      #   with:
-      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
-      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-      #     vercel-args: '--prod'
+  build-and-deploy-backend:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Build backend
+        run: |
+          cd backend
+          npm run build
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test --if-present
+        continue-on-error: true
+
+      - name: Deploy backend to Railway
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Install Railway CLI
+          npm install -g @railway/cli
+
+          # Login and deploy (requires RAILWAY_TOKEN secret)
+          cd backend
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+          railway up --detach
+
+      # Alternative: Deploy to Vercel
+      # - name: Deploy backend to Vercel
+      #   if: github.ref == 'refs/heads/main'
+      #   run: |
+      #     cd backend
+      #     npm i -g vercel
+      #     vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+
+      # Alternative: Deploy to Render
+      # - name: Deploy backend to Render
+      #   if: github.ref == 'refs/heads/main'
+      #   run: |
+      #     curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}

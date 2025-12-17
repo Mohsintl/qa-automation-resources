@@ -94,16 +94,15 @@ export const siteConfig = {
 };
 
 export const apiConfig = {
-  baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://your_project_id.supabase.co/functions/v1',
-  functionName: import.meta.env.VITE_API_FUNCTION_NAME || 'make-server-6e41de3d',
+  baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
 
   get endpoints() {
     return {
-      submissions: `${this.baseUrl}/${this.functionName}/submissions`,
-      adminPending: `${this.baseUrl}/${this.functionName}/admin/pending`,
-      adminReview: `${this.baseUrl}/${this.functionName}/admin/review`,
-      approvedContent: `${this.baseUrl}/${this.functionName}/approved`,
-      adminSignup: `${this.baseUrl}/${this.functionName}/admin/signup`,
+      submissions: `${this.baseUrl}/submissions`,
+      adminPending: `${this.baseUrl}/admin/pending`,
+      adminReview: `${this.baseUrl}/admin/review`,
+      approvedContent: `${this.baseUrl}/approved`,
+      adminSignup: `${this.baseUrl}/admin/signup`,
     };
   },
 };
