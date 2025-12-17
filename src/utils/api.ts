@@ -86,6 +86,9 @@ export async function submitContent(
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Authentication failed. Please check your credentials or contact support.');
+    }
     const error = await parseError(response);
     throw new Error(error);
   }
@@ -180,6 +183,11 @@ export async function getApprovedContent(type: string): Promise<any> {
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      // Invalid credentials, return empty results instead of throwing
+      console.warn('Invalid API credentials, returning empty results');
+      return { items: [] };
+    }
     const error = await parseError(response);
     throw new Error(error);
   }
@@ -220,6 +228,9 @@ export async function signupAdmin(
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Authentication failed. Please check your credentials or contact support.');
+    }
     const error = await parseError(response);
     throw new Error(error);
   }
