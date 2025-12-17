@@ -1,14 +1,21 @@
+/**
+ * Supabase Edge Function for handling QA content submissions and admin operations.
+ * Provides REST API endpoints for public submissions and admin review workflows.
+ * Uses Deno runtime with Hono framework and KV store for data persistence.
+ */
+
 import { Hono } from 'npm:hono';
 import { cors } from 'npm:hono/cors';
 import { logger } from 'npm:hono/logger';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import * as kv from './kv_store.tsx';
 
+// Initialize Hono app with middleware
 const app = new Hono();
-
 app.use('*', cors());
 app.use('*', logger(console.log));
 
+// Initialize Supabase client with service role key for server-side operations
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
